@@ -18,7 +18,7 @@ class obj:
         for y in range(int( 2 + screenRes[1] / radiusMax )):
             grid[x].append( list() )
 
-    def __init__ (self, m, r, pos, vel, colour, image, mu = 0, e = 1, theta = 0, angVel = 0):
+    def __init__ (self, m, r, pos, vel, colour, image, mu = 0.5, e = 1, theta = 0, angVel = 0):
         self.m = m
         self.r = min(obj.radiusMax, r)
 
@@ -45,7 +45,7 @@ class obj:
     def update (self, dt):
         obj.grid [int( self.pos[0]/obj.radiusMax )][int( self.pos[1]/obj.radiusMax )] .remove(self)
 
-        # friction [here]
+        # friction [here] I'll add this later
 
         self.pos = self.pos + self.vel*dt
         self.theta =  (self.theta + self.angVel*dt ) % 360
@@ -84,7 +84,7 @@ class obj:
             for other in obj.grid[n[0]][n[1]]:
                 if  collisions.get( (self.n, other.n) ) != True and dist(other.pos, self.pos) <= self.r + other.r:
                     #Translational Part [...]
-                    sep = other.pos - self.pos + pygame.math.Vector2((0.01, 0.01))
+                    sep = other.pos - self.pos + pygame.math.Vector2(0.001) 
                     u1Para = pygame.math.Vector2.project(self.vel, sep)
                     u2Para = pygame.math.Vector2.project(other.vel, sep)
                     u1Perp = self.vel - u1Para
@@ -99,8 +99,13 @@ class obj:
 
                     #Rotational Part [...]
                     mu = ( self.mu + other.mu ) / 2
-                    # j = mu * 
+                    vRelPerp = u2Perp - u1Perp
+                    J = self.m * (v1Para - u1Para).magnitude() * (sep[1] * vRelPerp[0] - sep[0] * vRelPerp[1]) / ( sep.magnitude() * vRelPerp.magnitude() + 0.001)
 
+                    self.angVel += mu * J * self.r / self.moi
+                    other.angVel += mu * J * other.r / other.moi
+
+                    #The resultant velocities for this collision are now calculated [it won't be considered again at same time]
                     collisions[ (self.n, other.n) ] = True
                     collisions[ (other.n, self.n) ] = True
 
@@ -122,8 +127,8 @@ if __name__ == "__main__":
     pygame.display.set_caption("Rotational Collision for 2D Circular Laminas")
     pygame.display.set_icon(icon)
 
-    obj (10, 45, (200, 200), (120*5, 130*5), (230, 120, 230), pygame.image.load('images/angryBird.png'))
-    obj (10, 45, (300, 200), (120*5, 130*5), (130, 220, 230), pygame.image.load('images/cyanBall.png'))
+    obj (10, 45, (200, 480), (100*5, -100*5), (230, 120, 230), pygame.image.load('images/angryBird.png'))
+    obj (10, 45, (300, 200), (-100*5, 100*5), (130, 220, 230), pygame.image.load('images/cyanBall.png'))
     obj (10, 45, (400, 200), (120*5, 130*5), (130, 120, 230), pygame.image.load('images/greenBall.png'))
     obj (10, 45, (500, 200), (120*5, 130*5), (230, 220, 130), pygame.image.load('images/blueBall.png'))
 
